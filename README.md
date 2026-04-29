@@ -109,4 +109,4 @@ If anything breaks, see the troubleshooting section of [`Attendee-SETUP.md`](./A
 
 ## License
 
-Same as parent repo.
+MIT — see [`LICENSE`](./LICENSE). Use it, fork it, teach it. Just keep the copyright notice.
