@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevRel-DeepAgent — Workshop</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>DevRel-DeepAgent</h1>
+        <p class="subtitle">Workshop edition · 4 specialist subagents</p>
+      </header>
+
+      <section class="agents">
+        <div class="agent-card" data-agent="metrics-agent">
+          <div class="dot"></div>
+          <div class="label">metrics-agent</div>
+          <div class="role">GitHub stats</div>
+        </div>
+        <div class="agent-card" data-agent="sentiment-agent">
+          <div class="dot"></div>
+          <div class="label">sentiment-agent</div>
+          <div class="role">community mood</div>
+        </div>
+        <div class="agent-card" data-agent="web-agent">
+          <div class="dot"></div>
+          <div class="label">web-agent</div>
+          <div class="role">adoption signals</div>
+        </div>
+        <div class="agent-card" data-agent="elastic-agent">
+          <div class="dot"></div>
+          <div class="label">elastic-agent</div>
+          <div class="role">cached research</div>
+        </div>
+      </section>
+
+      <section class="query">
+        <textarea
+          id="query"
+          rows="3"
+          placeholder="Ask about a technology, e.g. 'Evaluate elastic/elasticsearch — should we recommend it?'"
+        >Evaluate elastic/elasticsearch — should we recommend it?</textarea>
+        <button id="submit">Run agent</button>
+      </section>
+
+      <section class="output">
+        <div class="panel">
+          <h2>Activity</h2>
+          <div id="activity" class="activity"></div>
+        </div>
+        <div class="panel">
+          <h2>Final synthesis</h2>
+          <div id="final" class="final placeholder">
+            (the orchestrator's final reply will appear here)
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

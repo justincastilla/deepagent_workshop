@@ -1,0 +1,19 @@
+{
+  "id": "find-similar-technologies",
+  "type": "esql",
+  "description": "Use semantic search to find technologies similar to a given description. Returns repositories with metrics and analysis that match the search criteria.",
+  "tags": ["search", "semantic", "technology-research"],
+  "configuration": {
+    "query": "FROM technology-research METADATA _score | WHERE semantic_content:?description | SORT _score DESC | KEEP repo, timestamp, tags, analysis.viability_score, analysis.summary, _score | LIMIT ?limit",
+    "params": {
+      "description": {
+        "type": "text",
+        "description": "Natural language description of the technology or use case to search for"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of results to return (default 5)"
+      }
+    }
+  }
+}

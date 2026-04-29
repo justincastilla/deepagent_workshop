@@ -1,0 +1,37 @@
+{
+  "mappings": {
+    "properties": {
+      "repo": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "metrics": {
+        "properties": {
+          "stars": { "type": "integer" },
+          "forks": { "type": "integer" },
+          "watchers": { "type": "integer" },
+          "contributors": { "type": "integer" },
+          "commits_last_week": { "type": "integer" },
+          "open_issues": { "type": "integer" },
+          "issue_close_rate": { "type": "float" },
+          "pr_merge_rate": { "type": "float" }
+        }
+      },
+      "analysis": {
+        "properties": {
+          "viability_score": { "type": "integer" },
+          "summary": { "type": "text" },
+          "recommendation": { "type": "keyword" }
+        }
+      },
+      "semantic_content": {
+        "type": "semantic_text"
+      }
+    }
+  }
+}

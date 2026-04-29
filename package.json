@@ -1,0 +1,40 @@
+{
+  "name": "deepagent-workshop-js",
+  "version": "0.1.0",
+  "description": "JS port of DevRel-DeepAgent for the 2-hour Elasticsearch subagent workshop",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch server/app.ts",
+    "ask": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "smoke": "tsx scripts/smoke.ts",
+    "verify": "tsx scripts/verify.ts",
+    "test:client": "tsx scripts/test-client.ts",
+    "test:tool": "tsx scripts/test-elastic-tool.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/anthropic": "^1.3.28",
+    "@langchain/core": "^1.1.42",
+    "@langchain/openai": "^1.4.5",
+    "deepagents": "^1.9.0",
+    "dotenv": "^17.0.0",
+    "express": "^5.0.0",
+    "langchain": "^1.3.1",
+    "langsmith": "^0.5.25",
+    "ws": "^8.18.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

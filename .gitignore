@@ -1,0 +1,27 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+
+# LiteLLM proxy infrastructure (deploy artifacts, not part of workshop code)
+deepagent-workshop/
+litellm-setup/
+litellm-utilities/
+infra/
+
+# Solutions / answer key — instructor-only, never ship to attendees
+solutions/
+
+# start-local artifacts (per-machine, contains generated secrets — each attendee runs start-local themselves)
+elastic-start-local/
+
+# Slide-deck build artifacts (commit the .pptx, ignore node_modules/intermediates)
+slides/node_modules/
+slides/*.pdf
+slides/slide-*.jpg
+slides/v2-slide-*.jpg
