@@ -36,6 +36,17 @@ type GitHubIssue = {
   pull_request?: unknown;
 };
 
+/**
+ * Slice a string by Unicode code points (not UTF-16 code units).
+ * Prevents `.slice()` from splitting an emoji or other surrogate pair
+ * mid-character, which produces invalid JSON when sent upstream.
+ */
+function safeSlice(s: string, max: number): string {
+  if (!s) return "";
+  const chars = Array.from(s);
+  return chars.length > max ? chars.slice(0, max).join("") : s;
+}
+
 const fetchRecentIssues = tool(
   async ({ owner, repo, limit }) => {
     const lim = Math.min(Math.max(limit ?? 10, 1), 30);
@@ -51,7 +62,7 @@ const fetchRecentIssues = tool(
         number: i.number,
         title: i.title,
         state: i.state,
-        body_preview: (i.body ?? "").slice(0, 400).replace(/\s+/g, " ").trim(),
+        body_preview: safeSlice((i.body ?? "").replace(/\s+/g, " ").trim(), 400),
         labels: i.labels.map((l) => l.name),
         comments: i.comments,
         created_at: i.created_at,
@@ -76,10 +87,8 @@ const fetchRecentIssues = tool(
       }
       lines.push(`- **URL:** ${i.url}`);
       if (i.body_preview) {
-        const trimmed =
-          i.body_preview.length > 240
-            ? i.body_preview.slice(0, 240) + "…"
-            : i.body_preview;
+        const sliced = safeSlice(i.body_preview, 240);
+        const trimmed = sliced.length < i.body_preview.length ? sliced + "…" : sliced;
         lines.push("");
         lines.push(`> ${trimmed}`);
       }
