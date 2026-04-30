@@ -1,14 +1,8 @@
 /**
- * `askElasticAgent` — the LangGraph tool the Elastic subagent uses to
- * delegate data retrieval to Kibana Agent Builder.
+ * askElasticAgent tool — SOLUTION.
  *
- * ATTENDEES: this is Build Step 2. Wrap the Kibana client (Build Step 1)
- * as a tool the subagent can call. When you're done, run:
- *
- *     npm run test:tool
- *
- * If that prints a reply from the agent, you're cleared to move on to
- * Build Step 3 (the subagent itself).
+ * Working answer key for Build Step 2. Drop-in replacement for
+ * src/tools/askElasticAgent.ts.
  */
 
 import { tool } from "@langchain/core/tools";
@@ -16,57 +10,51 @@ import { z } from "zod";
 
 import { converse } from "./kibanaClient.js";
 
-// ---------------------------------------------------------------------
-// TODO 1: define the tool's input schema with Zod.
-//
-// Required field:
-//   - query: string
-//       Natural-language description of what data to fetch.
-//       Use .describe() liberally — the LLM reads these.
-//
-// Optional field:
-//   - conversationId: string
-//       For continuing a multi-turn conversation across tool calls.
-// ---------------------------------------------------------------------
 const askElasticAgentSchema = z.object({
-  // <- fill in
+  query: z
+    .string()
+    .describe(
+      "Natural-language description of what data to fetch from Elasticsearch. " +
+      "Be specific about repository names, time ranges, and intent. " +
+      "Examples: 'Find technologies similar to real-time observability', " +
+      "'Get the latest research report for elastic/elasticsearch'.",
+    ),
+  conversationId: z
+    .string()
+    .optional()
+    .describe(
+      "Optional conversation ID returned by a previous askElasticAgent call. " +
+      "Pass to continue a multi-turn conversation with the Elastic Agent.",
+    ),
 });
 
 export const askElasticAgent = tool(
   async (input: z.infer<typeof askElasticAgentSchema>) => {
-    // -----------------------------------------------------------------
-    // TODO 2: call converse() with the right arguments and return the
-    // agent's reply text.
-    //
-    // The string you return here is what the subagent's LLM will see as
-    // the tool's output. Returning a structured object is fine too — the
-    // LLM will see it stringified.
-    //
-    // Hints:
-    //   - agentId comes from process.env.ELASTIC_AGENT_ID
-    //   - input.query → converse's input
-    //   - input.conversationId (if set) → converse's conversationId
-    // -----------------------------------------------------------------
-    throw new Error("askElasticAgent is not implemented yet — finish Build Step 2.");
+    const agentId = process.env.ELASTIC_AGENT_ID;
+    if (!agentId) {
+      throw new Error("Missing ELASTIC_AGENT_ID in .env");
+    }
+
+    const { text } = await converse({
+      agentId,
+      input: input.query,
+      conversationId: input.conversationId,
+    });
+
+    return text;
   },
   {
     name: "askElasticAgent",
-
-    // -----------------------------------------------------------------
-    // TODO 3: write the tool description.
-    //
-    // This is what the LLM reads when deciding whether (and how) to call
-    // this tool. The Python original is a very good reference — your
-    // instructor has it on screen. Things to include:
-    //
-    //   - What the tool does (sends NL → Kibana Agent Builder)
-    //   - What kinds of data the agent can fetch (semantic search,
-    //     historical snapshots, adoption signals, reports, ...)
-    //   - Argument hints with examples (be specific about repos +
-    //     time ranges)
-    // -----------------------------------------------------------------
-    description: "TODO: describe what this tool does and when to use it.",
-
+    description:
+      "Send a natural-language request to the Elastic Agent and return its " +
+      "response. The agent has access to ES|QL tools for searching, " +
+      "retrieving, and analysing technology research data stored in " +
+      "Elasticsearch. Use this for any data retrieval from Elasticsearch, " +
+      "including: finding similar technologies via semantic search, " +
+      "retrieving historical snapshots and trend data, getting adoption " +
+      "signals, fetching past research reports. Be specific in queries: " +
+      "include full repo names (e.g. 'elastic/elasticsearch') and time " +
+      "ranges where relevant.",
     schema: askElasticAgentSchema,
   },
 );
