@@ -56,69 +56,7 @@ header h1 {
   color: var(--text-dim);
 }
 
-/* --- Agent cards -------------------------------------------------------- */
-
-.agents {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.agent-card {
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: border-color 0.2s;
-}
-
-.agent-card .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--text-dim); /* idle */
-  flex-shrink: 0;
-  transition:
-    background 0.3s ease,
-    opacity 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.agent-card .label {
-  font-weight: 600;
-}
-
-.agent-card .role {
-  margin-left: auto;
-  color: var(--text-dim);
-  font-size: 12px;
-}
-
-/* Per-agent dot color when starting/active/done.
-   The base color comes from a CSS variable scoped per data-agent. */
-.agent-card[data-agent="metrics-agent"] {
-  --agent-color: var(--metrics);
-}
-.agent-card[data-agent="sentiment-agent"] {
-  --agent-color: var(--sentiment);
-}
-.agent-card[data-agent="web-agent"] {
-  --agent-color: var(--web);
-}
-.agent-card[data-agent="elastic-agent"] {
-  --agent-color: var(--elastic);
-}
-
-/* State: dispatched but no inner work yet. Pulsing glow. */
-.agent-card.starting .dot {
-  background: var(--agent-color);
-  box-shadow: 0 0 0 0 var(--agent-color);
-  animation: pulse 1.4s ease-in-out infinite;
-}
+/* --- Pulse animation (used by group header dots when "starting") -------- */
 
 @keyframes pulse {
   0% {
@@ -133,22 +71,6 @@ header h1 {
     box-shadow: 0 0 0 0 var(--agent-color);
     opacity: 1;
   }
-}
-
-/* State: actively running tools. Solid, glowing. */
-.agent-card.active {
-  border-color: var(--agent-color);
-}
-.agent-card.active .dot {
-  background: var(--agent-color);
-  box-shadow: 0 0 6px var(--agent-color);
-}
-
-/* State: subagent finished. Dimmed color, no glow. */
-.agent-card.done .dot {
-  background: var(--agent-color);
-  opacity: 0.35;
-  box-shadow: none;
 }
 
 /* --- Query input -------------------------------------------------------- */
@@ -199,9 +121,9 @@ button:disabled {
 /* --- Output panels ------------------------------------------------------ */
 
 .output {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .panel {
@@ -209,11 +131,24 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 16px;
+}
+
+.panel.hidden {
+  display: none;
+}
+
+.activity-panel {
+  /* Activity is the dominant panel during a run */
   min-height: 400px;
 }
 
+.final-panel {
+  /* Final synthesis only appears once the orchestrator produces it */
+  min-height: 200px;
+}
+
 .panel h2 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-dim);
@@ -221,20 +156,209 @@ button:disabled {
   letter-spacing: 0.05em;
 }
 
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.download-btn {
+  background: var(--bg-elev-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.download-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .activity {
+  /* Three-row grid:
+       Row 1: orchestrator (full width)
+       Row 2: metrics  | sentiment
+       Row 3: web      | elastic
+     Wider subagent boxes; uses vertical space instead of cramping horizontally. */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-areas:
+    "orch    orch"
+    "metrics sentiment"
+    "web     elastic";
+  gap: 12px;
+}
+
+.group[data-group="orchestrator"] {
+  grid-area: orch;
+}
+.group[data-group="metrics-agent"] {
+  grid-area: metrics;
+}
+.group[data-group="sentiment-agent"] {
+  grid-area: sentiment;
+}
+.group[data-group="web-agent"] {
+  grid-area: web;
+}
+.group[data-group="elastic-agent"] {
+  grid-area: elastic;
+}
+
+/* --- Activity groups (one per producer: orchestrator, each subagent) ---
+   Each group is a fixed-shape container with its own internal scroll.
+   Adding events to one group does NOT push others around. */
+
+.group {
+  border-left: 3px solid var(--agent-color, var(--text-dim));
+  padding: 0 0 0 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 600px;
-  overflow-y: auto;
+  flex-shrink: 0;
 }
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.group-header .group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--agent-color, var(--text-dim));
+  flex-shrink: 0;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.group-header .group-label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--agent-color, var(--text-dim));
+}
+
+.group-header .group-count {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--bg-elev-2);
+  padding: 1px 7px;
+  border-radius: 8px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Each group has a bounded body with its own scroll */
+  height: 220px;
+  overflow-y: auto;
+  padding: 2px 6px 2px 0;
+}
+
+/* Orchestrator gets a slightly shorter body since it's a wide row */
+.group[data-group="orchestrator"] .group-body {
+  height: 160px;
+}
+
+/* Responsive: collapse to a single column on very narrow viewports */
+@media (max-width: 700px) {
+  .activity {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "orch"
+      "metrics"
+      "sentiment"
+      "web"
+      "elastic";
+  }
+}
+
+/* Empty-state hint */
+.group-body:empty::before {
+  content: "(no events yet)";
+  display: block;
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+/* Per-group identity color */
+.group[data-group="orchestrator"] {
+  --agent-color: var(--orchestrator);
+}
+.group[data-group="metrics-agent"] {
+  --agent-color: var(--metrics);
+}
+.group[data-group="sentiment-agent"] {
+  --agent-color: var(--sentiment);
+}
+.group[data-group="web-agent"] {
+  --agent-color: var(--web);
+}
+.group[data-group="elastic-agent"] {
+  --agent-color: var(--elastic);
+}
+.group[data-group="system"] {
+  --agent-color: var(--text-dim);
+}
+
+/* Group state mirrors the agent card */
+.group.starting .group-dot {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.group.active .group-dot {
+  box-shadow: 0 0 6px var(--agent-color);
+}
+.group.done .group-dot {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* --- Entries (now nested inside groups) --- */
 
 .entry {
   border-left: 3px solid var(--text-dim);
-  padding: 8px 12px;
   background: var(--bg-elev-2);
   border-radius: 0 4px 4px 0;
   font-size: 13px;
+}
+
+/* Simple entries (system messages, intermediate text) */
+.entry:not(.tool-call) {
+  padding: 8px 12px;
 }
 
 .entry .kind {
@@ -249,9 +373,91 @@ button:disabled {
   gap: 8px;
 }
 
-.entry .kind .from-label {
-  color: var(--agent-color, var(--text-dim));
+/* --- Foldable tool-call entries --- */
+
+.entry.tool-call {
+  padding: 0;
+}
+
+.tool-call-summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  user-select: none;
+}
+
+/* Hide native disclosure triangle on Webkit/Blink */
+.tool-call-summary::-webkit-details-marker {
+  display: none;
+}
+.tool-call-summary::marker {
+  content: "";
+}
+
+/* Custom rotation arrow */
+.tool-call-summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+details[open] > .tool-call-summary::before {
+  transform: rotate(90deg);
+}
+
+.tool-call-summary .tool-name {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.tool-call-summary .tool-status {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.entry.tool-call.complete .tool-status {
+  color: var(--ok);
+}
+
+.tool-call-body {
+  padding: 8px 12px 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-section h4 {
+  margin: 0 0 4px 0;
+  font-size: 10px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.tool-section pre {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.4;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--text);
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .entry pre {
@@ -300,16 +506,116 @@ button:disabled {
 }
 
 .final {
-  white-space: pre-wrap;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
   line-height: 1.6;
+  font-size: 13px;
+  color: var(--text);
 }
 
 .final.placeholder {
   color: var(--text-dim);
   font-style: italic;
+}
+
+/* --- Markdown rendering inside .final --- */
+
+.final h1,
+.final h2,
+.final h3,
+.final h4 {
+  margin: 1em 0 0.4em;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.final h1 {
+  font-size: 22px;
+}
+.final h2 {
+  font-size: 18px;
+  color: var(--accent);
+}
+.final h3 {
+  font-size: 15px;
+}
+.final h4 {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.final p {
+  margin: 0.5em 0;
+}
+
+.final ul,
+.final ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.final li {
+  margin: 0.25em 0;
+}
+
+.final strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.final em {
+  color: var(--text);
+}
+
+.final a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.final a:hover {
+  text-decoration: underline;
+}
+
+.final code {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--web);
+}
+
+.final pre {
+  background: var(--bg);
+  padding: 8px 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0.6em 0;
+}
+
+.final pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+}
+
+.final hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
+.final blockquote {
+  margin: 0.5em 0;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 3px solid var(--border);
+  color: var(--text-dim);
 }
 
 /* --- Responsive --------------------------------------------------------- */

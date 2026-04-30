@@ -36,6 +36,17 @@ type GitHubIssue = {
   pull_request?: unknown;
 };
 
+/**
+ * Slice a string by Unicode code points (not UTF-16 code units).
+ * Prevents `.slice()` from splitting an emoji or other surrogate pair
+ * mid-character, which produces invalid JSON when sent upstream.
+ */
+function safeSlice(s: string, max: number): string {
+  if (!s) return "";
+  const chars = Array.from(s);
+  return chars.length > max ? chars.slice(0, max).join("") : s;
+}
+
 const fetchRecentIssues = tool(
   async ({ owner, repo, limit }) => {
     const lim = Math.min(Math.max(limit ?? 10, 1), 30);
@@ -51,22 +62,39 @@ const fetchRecentIssues = tool(
         number: i.number,
         title: i.title,
         state: i.state,
-        body_preview: (i.body ?? "").slice(0, 800),
+        body_preview: safeSlice((i.body ?? "").replace(/\s+/g, " ").trim(), 400),
         labels: i.labels.map((l) => l.name),
         comments: i.comments,
         created_at: i.created_at,
         url: i.html_url,
       }));
 
-    return JSON.stringify(
-      {
-        repo: `${owner}/${repo}`,
-        count: issues.length,
-        issues,
-      },
-      null,
-      2,
-    );
+    // Markdown formatting — readable for both the LLM AND the human
+    // watching the activity panel.
+    if (issues.length === 0) {
+      return `# Recent issues for ${owner}/${repo}\n\nNo recent issues found.`;
+    }
+
+    const lines: string[] = [
+      `# Recent issues for ${owner}/${repo} (${issues.length} found)`,
+      "",
+    ];
+    for (const i of issues) {
+      lines.push(`### #${i.number} · ${i.title}`);
+      lines.push(`- **State:** ${i.state}  ·  **Comments:** ${i.comments}  ·  **Created:** ${i.created_at.slice(0, 10)}`);
+      if (i.labels.length > 0) {
+        lines.push(`- **Labels:** ${i.labels.join(", ")}`);
+      }
+      lines.push(`- **URL:** ${i.url}`);
+      if (i.body_preview) {
+        const sliced = safeSlice(i.body_preview, 240);
+        const trimmed = sliced.length < i.body_preview.length ? sliced + "…" : sliced;
+        lines.push("");
+        lines.push(`> ${trimmed}`);
+      }
+      lines.push("");
+    }
+    return lines.join("\n");
   },
   {
     name: "fetchRecentIssues",
