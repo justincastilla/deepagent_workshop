@@ -13,29 +13,6 @@
         <p class="subtitle">Workshop edition · 4 specialist subagents</p>
       </header>
 
-      <section class="agents">
-        <div class="agent-card" data-agent="metrics-agent">
-          <div class="dot"></div>
-          <div class="label">metrics-agent</div>
-          <div class="role">GitHub stats</div>
-        </div>
-        <div class="agent-card" data-agent="sentiment-agent">
-          <div class="dot"></div>
-          <div class="label">sentiment-agent</div>
-          <div class="role">community mood</div>
-        </div>
-        <div class="agent-card" data-agent="web-agent">
-          <div class="dot"></div>
-          <div class="label">web-agent</div>
-          <div class="role">adoption signals</div>
-        </div>
-        <div class="agent-card" data-agent="elastic-agent">
-          <div class="dot"></div>
-          <div class="label">elastic-agent</div>
-          <div class="role">cached research</div>
-        </div>
-      </section>
-
       <section class="query">
         <textarea
           id="query"
@@ -46,18 +23,68 @@
       </section>
 
       <section class="output">
-        <div class="panel">
-          <h2>Activity</h2>
-          <div id="activity" class="activity"></div>
+        <div class="panel activity-panel">
+          <div class="panel-head">
+            <h2>Activity</h2>
+          </div>
+          <div id="activity" class="activity">
+            <section class="group" data-group="orchestrator">
+              <div class="group-header">
+                <span class="group-dot"></span>
+                <span class="group-label">orchestrator</span>
+                <span class="group-count">0</span>
+              </div>
+              <div class="group-body"></div>
+            </section>
+            <section class="group" data-group="metrics-agent">
+              <div class="group-header">
+                <span class="group-dot"></span>
+                <span class="group-label">metrics-agent</span>
+                <span class="group-count">0</span>
+              </div>
+              <div class="group-body"></div>
+            </section>
+            <section class="group" data-group="sentiment-agent">
+              <div class="group-header">
+                <span class="group-dot"></span>
+                <span class="group-label">sentiment-agent</span>
+                <span class="group-count">0</span>
+              </div>
+              <div class="group-body"></div>
+            </section>
+            <section class="group" data-group="web-agent">
+              <div class="group-header">
+                <span class="group-dot"></span>
+                <span class="group-label">web-agent</span>
+                <span class="group-count">0</span>
+              </div>
+              <div class="group-body"></div>
+            </section>
+            <section class="group" data-group="elastic-agent">
+              <div class="group-header">
+                <span class="group-dot"></span>
+                <span class="group-label">elastic-agent</span>
+                <span class="group-count">0</span>
+              </div>
+              <div class="group-body"></div>
+            </section>
+          </div>
         </div>
-        <div class="panel">
-          <h2>Final synthesis</h2>
+        <div id="final-panel" class="panel final-panel hidden">
+          <div class="panel-head">
+            <h2>Final synthesis</h2>
+            <button id="download-md" class="download-btn" disabled title="Download the synthesis as a .md file">
+              ↓ Download .md
+            </button>
+          </div>
           <div id="final" class="final placeholder">
             (the orchestrator's final reply will appear here)
           </div>
         </div>
       </section>
     </main>
+    <!-- Markdown renderer (used to format the Final synthesis panel) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11/marked.min.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>
