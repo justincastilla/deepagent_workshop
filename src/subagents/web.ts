@@ -53,21 +53,33 @@ const searchAdoptionSignals = tool(
     }
 
     const data = (await res.json()) as { results: TavilyResult[] };
+    const results = data.results ?? [];
 
-    return JSON.stringify(
-      {
-        query,
-        result_count: data.results?.length ?? 0,
-        results: (data.results ?? []).map((r) => ({
-          title: r.title,
-          url: r.url,
-          content_preview: (r.content ?? "").slice(0, 400),
-          score: r.score,
-        })),
-      },
-      null,
-      2,
-    );
+    if (results.length === 0) {
+      return `# Web search for "${query}"\n\nNo results found.`;
+    }
+
+    // Markdown formatting — readable for both the LLM AND the human
+    // watching the activity panel.
+    const lines: string[] = [
+      `# Web search for "${query}" (${results.length} results)`,
+      "",
+    ];
+    for (const r of results) {
+      const score = typeof r.score === "number" ? r.score.toFixed(2) : "—";
+      const preview = (r.content ?? "")
+        .slice(0, 240)
+        .replace(/\s+/g, " ")
+        .trim();
+      lines.push(`### ${r.title}  ·  relevance ${score}`);
+      lines.push(`<${r.url}>`);
+      if (preview) {
+        lines.push("");
+        lines.push(`> ${preview}${(r.content ?? "").length > 240 ? "…" : ""}`);
+      }
+      lines.push("");
+    }
+    return lines.join("\n");
   },
   {
     name: "searchAdoptionSignals",

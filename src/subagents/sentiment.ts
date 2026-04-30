@@ -51,22 +51,41 @@ const fetchRecentIssues = tool(
         number: i.number,
         title: i.title,
         state: i.state,
-        body_preview: (i.body ?? "").slice(0, 800),
+        body_preview: (i.body ?? "").slice(0, 400).replace(/\s+/g, " ").trim(),
         labels: i.labels.map((l) => l.name),
         comments: i.comments,
         created_at: i.created_at,
         url: i.html_url,
       }));
 
-    return JSON.stringify(
-      {
-        repo: `${owner}/${repo}`,
-        count: issues.length,
-        issues,
-      },
-      null,
-      2,
-    );
+    // Markdown formatting — readable for both the LLM AND the human
+    // watching the activity panel.
+    if (issues.length === 0) {
+      return `# Recent issues for ${owner}/${repo}\n\nNo recent issues found.`;
+    }
+
+    const lines: string[] = [
+      `# Recent issues for ${owner}/${repo} (${issues.length} found)`,
+      "",
+    ];
+    for (const i of issues) {
+      lines.push(`### #${i.number} · ${i.title}`);
+      lines.push(`- **State:** ${i.state}  ·  **Comments:** ${i.comments}  ·  **Created:** ${i.created_at.slice(0, 10)}`);
+      if (i.labels.length > 0) {
+        lines.push(`- **Labels:** ${i.labels.join(", ")}`);
+      }
+      lines.push(`- **URL:** ${i.url}`);
+      if (i.body_preview) {
+        const trimmed =
+          i.body_preview.length > 240
+            ? i.body_preview.slice(0, 240) + "…"
+            : i.body_preview;
+        lines.push("");
+        lines.push(`> ${trimmed}`);
+      }
+      lines.push("");
+    }
+    return lines.join("\n");
   },
   {
     name: "fetchRecentIssues",

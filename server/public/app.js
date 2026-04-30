@@ -16,6 +16,12 @@ const queryEl = $("#query");
 const submitEl = $("#submit");
 const activityEl = $("#activity");
 const finalEl = $("#final");
+const finalPanelEl = $("#final-panel");
+const downloadEl = $("#download-md");
+
+// Latest raw-markdown final synthesis, kept around so the download button
+// can serve a real .md file regardless of how it's been rendered in the UI.
+let finalRawMd = "";
 
 const KNOWN_SUBAGENTS = new Set([
   "metrics-agent",
@@ -85,68 +91,47 @@ function send(payload) {
 }
 
 function clearOutput() {
-  activityEl.innerHTML = "";
+  // Reset each pre-rendered group's body and count instead of nuking
+  // the whole activity panel — keeps the fixed group layout intact.
+  $$(".group").forEach((group) => {
+    const body = group.querySelector(".group-body");
+    if (body) body.innerHTML = "";
+    const count = group.querySelector(".group-count");
+    if (count) count.textContent = "0";
+    group.classList.remove("starting", "active", "done");
+  });
+
+  // Hide the final synthesis panel until a new run produces one
+  if (finalPanelEl) finalPanelEl.classList.add("hidden");
   finalEl.classList.add("placeholder");
   finalEl.textContent = "(the orchestrator's final reply will appear here)";
+  finalRawMd = "";
+  if (downloadEl) downloadEl.disabled = true;
   taskRunToSubagent.clear();
   pendingToolCalls.clear();
-  $$(".agent-card").forEach((c) => {
-    c.classList.remove("starting", "active", "done");
-  });
 }
 
 function setAgentState(name, state) {
-  const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
-  if (card) {
-    card.classList.remove("starting", "active", "done");
-    if (state) card.classList.add(state);
-  }
   const group = document.querySelector(`.group[data-group="${name}"]`);
-  if (group) {
-    group.classList.remove("starting", "active", "done");
-    if (state) group.classList.add(state);
-  }
+  if (!group) return;
+  group.classList.remove("starting", "active", "done");
+  if (state) group.classList.add(state);
 }
 
-function getOrCreateGroup(name) {
-  let group = document.querySelector(`.group[data-group="${name}"]`);
-  if (group) return group;
-
-  group = document.createElement("section");
-  group.className = "group";
-  group.dataset.group = name;
-
-  const header = document.createElement("div");
-  header.className = "group-header";
-
-  const dot = document.createElement("span");
-  dot.className = "group-dot";
-  header.appendChild(dot);
-
-  const label = document.createElement("span");
-  label.className = "group-label";
-  label.textContent = name;
-  header.appendChild(label);
-
-  const count = document.createElement("span");
-  count.className = "group-count";
-  count.textContent = "0";
-  header.appendChild(count);
-
-  group.appendChild(header);
-
-  const body = document.createElement("div");
-  body.className = "group-body";
-  group.appendChild(body);
-
-  activityEl.appendChild(group);
-  return group;
+/**
+ * The 5 producer groups (orchestrator + 4 subagents) are pre-rendered in
+ * the HTML. This just looks one up. System events route to orchestrator
+ * since they're meta-events about the run as a whole.
+ */
+function getGroup(name) {
+  const target = name === "system" ? "orchestrator" : name;
+  return document.querySelector(`.group[data-group="${target}"]`);
 }
 
 function bumpGroupCount(group) {
   const count = group.querySelector(".group-count");
   const body = group.querySelector(".group-body");
-  count.textContent = String(body.children.length);
+  if (count && body) count.textContent = String(body.children.length);
 }
 
 /** Append a non-foldable line (system messages, intermediate text). */
@@ -177,11 +162,13 @@ function appendSimpleEntry({
     div.appendChild(pre);
   }
 
-  const groupName = from === "system" ? "system" : from;
-  const group = getOrCreateGroup(groupName);
-  group.querySelector(".group-body").appendChild(div);
+  const group = getGroup(from);
+  if (!group) return;
+  const body = group.querySelector(".group-body");
+  body.appendChild(div);
   bumpGroupCount(group);
-  activityEl.scrollTop = activityEl.scrollHeight;
+  // Scroll within this group's body so the latest event is visible
+  body.scrollTop = body.scrollHeight;
 }
 
 /**
@@ -239,11 +226,13 @@ function startToolCall({ runId, tool, input, owner, label }) {
 
   if (runId) pendingToolCalls.set(runId, details);
 
-  const groupName = owner === "system" ? "system" : owner;
-  const group = getOrCreateGroup(groupName);
-  group.querySelector(".group-body").appendChild(details);
+  const group = getGroup(owner);
+  if (!group) return details;
+  const groupBody = group.querySelector(".group-body");
+  groupBody.appendChild(details);
   bumpGroupCount(group);
-  activityEl.scrollTop = activityEl.scrollHeight;
+  // Scroll within this group's body
+  groupBody.scrollTop = groupBody.scrollHeight;
 
   return details;
 }
@@ -267,7 +256,29 @@ function completeToolCall({ runId, output, truncated }) {
 
 function setFinal(text) {
   finalEl.classList.remove("placeholder");
-  finalEl.textContent = text;
+  finalRawMd = text ?? "";
+
+  // Reveal the final-synthesis panel now that we have content
+  if (finalPanelEl) finalPanelEl.classList.remove("hidden");
+
+  // Render markdown via marked (loaded from CDN). Fall back to plain text
+  // if marked didn't load.
+  if (typeof window !== "undefined" && window.marked) {
+    try {
+      finalEl.innerHTML = window.marked.parse(text ?? "");
+    } catch {
+      finalEl.textContent = text ?? "";
+    }
+  } else {
+    finalEl.textContent = text ?? "";
+  }
+
+  if (downloadEl) downloadEl.disabled = !text;
+
+  // Smooth-scroll the final panel into view so the attendee notices it
+  if (finalPanelEl) {
+    finalPanelEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 function unwrapToolInput(input) {
@@ -443,5 +454,23 @@ queryEl.addEventListener("keydown", (e) => {
     submitEl.click();
   }
 });
+
+if (downloadEl) {
+  downloadEl.addEventListener("click", () => {
+    if (!finalRawMd) return;
+    const blob = new Blob([finalRawMd], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    a.download = `deepagent-research-${ts}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
 
 connect();
