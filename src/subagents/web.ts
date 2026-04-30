@@ -31,6 +31,17 @@ type TavilyResult = {
   score: number;
 };
 
+/**
+ * Slice a string by Unicode code points (not UTF-16 code units).
+ * Prevents `.slice()` from splitting an emoji or surrogate pair
+ * mid-character, which produces invalid JSON when sent upstream.
+ */
+function safeSlice(s: string, max: number): string {
+  if (!s) return "";
+  const chars = Array.from(s);
+  return chars.length > max ? chars.slice(0, max).join("") : s;
+}
+
 const searchAdoptionSignals = tool(
   async ({ query, maxResults }) => {
     const apiKey = requireEnv("TAVILY_API_KEY");
@@ -67,15 +78,13 @@ const searchAdoptionSignals = tool(
     ];
     for (const r of results) {
       const score = typeof r.score === "number" ? r.score.toFixed(2) : "—";
-      const preview = (r.content ?? "")
-        .slice(0, 240)
-        .replace(/\s+/g, " ")
-        .trim();
+      const cleaned = (r.content ?? "").replace(/\s+/g, " ").trim();
+      const preview = safeSlice(cleaned, 240);
       lines.push(`### ${r.title}  ·  relevance ${score}`);
       lines.push(`<${r.url}>`);
       if (preview) {
         lines.push("");
-        lines.push(`> ${preview}${(r.content ?? "").length > 240 ? "…" : ""}`);
+        lines.push(`> ${preview}${preview.length < cleaned.length ? "…" : ""}`);
       }
       lines.push("");
     }

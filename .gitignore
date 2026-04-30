@@ -17,6 +17,9 @@ infra/
 # Solutions / answer key — instructor-only, never ship to attendees
 solutions/
 
+# Local helper — sync-branches.sh leaves staged work in <branch>-synced refs
+sync-branches.sh
+
 # start-local artifacts (per-machine, contains generated secrets — each attendee runs start-local themselves)
 elastic-start-local/
 
