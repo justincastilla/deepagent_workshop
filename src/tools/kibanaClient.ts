@@ -1,19 +1,10 @@
 /**
- * Kibana Agent Builder client.
+ * Kibana Agent Builder client — SOLUTION.
  *
- * Talks to `/api/agent_builder/converse` on a Kibana cluster running the
- * Agent Builder feature. The endpoint accepts natural-language input and
- * returns the agent's reply along with a `conversation_id` that can be
- * passed back in follow-up calls to maintain multi-turn context.
+ * Working answer key for Build Step 1. Drop-in replacement for the TODO
+ * file at src/tools/kibanaClient.ts. Same imports, same exports.
  *
- * AttendeeS: this is Build Step 1. The shapes are pre-declared so the
- * compiler can guide you. Find the `TODO` markers and fill them in. When
- * you're done, run:
- *
- *     npm run test:client
- *
- * If that prints a reply from the agent, you're cleared to move on to
- * Build Step 2.
+ * Reference only. Don't share with attendees during the workshop.
  */
 
 export type ConverseRequest = {
@@ -42,69 +33,57 @@ function requireEnv(name: string): string {
   return v;
 }
 
-/**
- * Send a natural-language prompt to the workshop's Kibana Agent Builder
- * instance and return the agent's reply.
- *
- * @example
- *   const { text, conversationId } = await converse({
- *     agentId: process.env.ELASTIC_AGENT_ID!,
- *     input: "Find technologies similar to 'real-time observability'",
- *   });
- */
 export async function converse(req: ConverseRequest): Promise<ConverseResponse> {
   const kibanaUrl = requireEnv("KIBANA_URL");
   const apiKey = requireEnv("ELASTICSEARCH_API_KEY");
 
-  // ------------------------------------------------------------------
-  // TODO 1: build the request URL.
-  //
-  // The endpoint is:   <kibanaUrl>/api/agent_builder/converse
-  // ------------------------------------------------------------------
-  const url = ""; // <- replace
+  // 1. URL
+  const url = `${kibanaUrl.replace(/\/$/, "")}/api/agent_builder/converse`;
 
-  // ------------------------------------------------------------------
-  // TODO 2: build the request headers.
-  //
-  // Required headers for Kibana Agent Builder:
-  //   Authorization:  ApiKey <apiKey>
-  //   Content-Type:   application/json
-  //   kbn-xsrf:       true        (Kibana requires this on non-GET endpoints)
-  // ------------------------------------------------------------------
+  // 2. Headers
   const headers: Record<string, string> = {
-    // <- fill in
+    Authorization: `ApiKey ${apiKey}`,
+    "Content-Type": "application/json",
+    "kbn-xsrf": "true",
   };
 
-  // ------------------------------------------------------------------
-  // TODO 3: build the request body.
-  //
-  // Shape (note: snake_case — Kibana's API uses snake_case keys):
-  //   {
-  //     agent_id: string,           // req.agentId
-  //     input: string,              // req.input
-  //     conversation_id?: string,   // req.conversationId, only if present
-  //   }
-  // ------------------------------------------------------------------
+  // 3. Body — note the snake_case keys (Kibana convention).
   const body: Record<string, unknown> = {
-    // <- fill in
+    agent_id: req.agentId,
+    input: req.input,
+  };
+  if (req.conversationId) {
+    body.conversation_id = req.conversationId;
+  }
+
+  // 4. POST + parse.
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(
+      `Kibana Agent Builder returned ${res.status} ${res.statusText}: ${errorBody}`,
+    );
+  }
+
+  const data = (await res.json()) as {
+    conversation_id?: string;
+    response?: string | { message?: string };
   };
 
-  // ------------------------------------------------------------------
-  // TODO 4: POST the request and parse the JSON response.
-  //
-  // Use the built-in `fetch` (Node 20+ has it). On non-2xx, throw an
-  // error that includes the status code AND the response body — that
-  // makes debugging during the workshop much easier.
-  //
-  // Expected Kibana response shape (we only care about two fields):
-  //   {
-  //     conversation_id: string,
-  //     response: string,
-  //     ... (other fields you can ignore)
-  //   }
-  //
-  // Return:
-  //   { text: <the response field>, conversationId: <the conversation_id field> }
-  // ------------------------------------------------------------------
-  throw new Error("converse() is not implemented yet — finish Build Step 1.");
+  // The `response` field may be a string OR { message: string } depending
+  // on the Kibana version. Handle both.
+  const text =
+    typeof data.response === "string"
+      ? data.response
+      : (data.response?.message ?? "");
+
+  return {
+    text,
+    conversationId: data.conversation_id ?? "",
+  };
 }

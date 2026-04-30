@@ -2,7 +2,7 @@
  * `askElasticAgent` — the LangGraph tool the Elastic subagent uses to
  * delegate data retrieval to Kibana Agent Builder.
  *
- * AttendeeS: this is Build Step 2. Wrap the Kibana client (Build Step 1)
+ * ATTENDEES: this is Build Step 2. Wrap the Kibana client (Build Step 1)
  * as a tool the subagent can call. When you're done, run:
  *
  *     npm run test:tool

@@ -1,7 +1,7 @@
 /**
  * Elastic subagent — the workshop's centerpiece.
  *
- * AttendeeS: this is Build Step 3. With Build Steps 1 and 2 done, you'll
+ * ATTENDEES: this is Build Step 3. With Build Steps 1 and 2 done, you'll
  * now wire the system prompt and the askElasticAgent tool into a
  * deepagents subagent definition. The orchestrator already imports this
  * file and registers the subagent, so once you finish here, ask the

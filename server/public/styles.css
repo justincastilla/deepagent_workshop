@@ -224,17 +224,111 @@ button:disabled {
 .activity {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   max-height: 600px;
   overflow-y: auto;
+  padding-right: 6px;
 }
+
+/* --- Activity groups (one per producer: orchestrator, each subagent) --- */
+
+.group {
+  border-left: 3px solid var(--agent-color, var(--text-dim));
+  padding: 0 0 0 10px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.group-header .group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--agent-color, var(--text-dim));
+  flex-shrink: 0;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.group-header .group-label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--agent-color, var(--text-dim));
+}
+
+.group-header .group-count {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--bg-elev-2);
+  padding: 1px 7px;
+  border-radius: 8px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Per-group identity color */
+.group[data-group="orchestrator"] {
+  --agent-color: var(--orchestrator);
+}
+.group[data-group="metrics-agent"] {
+  --agent-color: var(--metrics);
+}
+.group[data-group="sentiment-agent"] {
+  --agent-color: var(--sentiment);
+}
+.group[data-group="web-agent"] {
+  --agent-color: var(--web);
+}
+.group[data-group="elastic-agent"] {
+  --agent-color: var(--elastic);
+}
+.group[data-group="system"] {
+  --agent-color: var(--text-dim);
+}
+
+/* Group state mirrors the agent card */
+.group.starting .group-dot {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.group.active .group-dot {
+  box-shadow: 0 0 6px var(--agent-color);
+}
+.group.done .group-dot {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* --- Entries (now nested inside groups) --- */
 
 .entry {
   border-left: 3px solid var(--text-dim);
-  padding: 8px 12px;
   background: var(--bg-elev-2);
   border-radius: 0 4px 4px 0;
   font-size: 13px;
+}
+
+/* Simple entries (system messages, intermediate text) */
+.entry:not(.tool-call) {
+  padding: 8px 12px;
 }
 
 .entry .kind {
@@ -249,9 +343,91 @@ button:disabled {
   gap: 8px;
 }
 
-.entry .kind .from-label {
-  color: var(--agent-color, var(--text-dim));
+/* --- Foldable tool-call entries --- */
+
+.entry.tool-call {
+  padding: 0;
+}
+
+.tool-call-summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  user-select: none;
+}
+
+/* Hide native disclosure triangle on Webkit/Blink */
+.tool-call-summary::-webkit-details-marker {
+  display: none;
+}
+.tool-call-summary::marker {
+  content: "";
+}
+
+/* Custom rotation arrow */
+.tool-call-summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+details[open] > .tool-call-summary::before {
+  transform: rotate(90deg);
+}
+
+.tool-call-summary .tool-name {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.tool-call-summary .tool-status {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.entry.tool-call.complete .tool-status {
+  color: var(--ok);
+}
+
+.tool-call-body {
+  padding: 8px 12px 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-section h4 {
+  margin: 0 0 4px 0;
+  font-size: 10px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.tool-section pre {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.4;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--text);
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .entry pre {
