@@ -56,20 +56,20 @@ const fetchRepoMetrics = tool(
     const commits = (await commitsRes.json()) as unknown[];
     const commitsLastWeek = Array.isArray(commits) ? commits.length : 0;
 
-    return JSON.stringify(
-      {
-        repo: `${owner}/${repo}`,
-        stars: repoData.stargazers_count,
-        forks: repoData.forks_count,
-        watchers: repoData.subscribers_count,
-        open_issues: repoData.open_issues_count,
-        contributors,
-        commits_last_week: commitsLastWeek,
-        last_pushed: repoData.pushed_at,
-      },
-      null,
-      2,
-    );
+    // Markdown formatting — readable for both the LLM AND the human
+    // watching the activity panel.
+    const fmt = (n: number) => n.toLocaleString();
+    return [
+      `# Metrics for ${owner}/${repo}`,
+      "",
+      `- **Stars:** ${fmt(repoData.stargazers_count)}`,
+      `- **Forks:** ${fmt(repoData.forks_count)}`,
+      `- **Watchers:** ${fmt(repoData.subscribers_count)}`,
+      `- **Contributors:** ${fmt(contributors)}`,
+      `- **Open issues:** ${fmt(repoData.open_issues_count)}`,
+      `- **Commits in last 7 days:** ${commitsLastWeek}`,
+      `- **Last push:** ${repoData.pushed_at.slice(0, 10)}`,
+    ].join("\n");
   },
   {
     name: "fetchRepoMetrics",

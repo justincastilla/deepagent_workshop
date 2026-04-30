@@ -92,6 +92,57 @@ function send(ws: WebSocket, payload: Record<string, unknown>) {
  * intentionally drop noisy token-level events and only keep the
  * structural ones that explain what the agent is doing.
  */
+/**
+ * Tool outputs from LangGraph come back wrapped in a LangChain message
+ * (typically a serialized ToolMessage). The actual content the LLM sees
+ * lives in `kwargs.content` (for constructor-serialized messages) or
+ * `.content` (for already-instantiated message objects). This unwraps
+ * to that string so the UI shows the meaningful payload, not the
+ * surrounding `{lc, type, id, kwargs: {...}}` envelope.
+ */
+function extractOutputText(output: unknown): string {
+  if (output == null) return "";
+  if (typeof output === "string") return output;
+
+  if (typeof output === "object") {
+    const obj = output as {
+      kwargs?: { content?: unknown };
+      content?: unknown;
+    };
+    // Constructor-serialized LangChain message
+    if (obj.kwargs) {
+      const c = obj.kwargs.content;
+      if (typeof c === "string") return c;
+      if (Array.isArray(c)) {
+        return c
+          .map((b: unknown) => {
+            if (typeof b === "string") return b;
+            if (b && typeof b === "object" && "text" in b) {
+              return String((b as { text: unknown }).text);
+            }
+            return JSON.stringify(b);
+          })
+          .join("\n");
+      }
+    }
+    // Already-instantiated message
+    if (typeof obj.content === "string") return obj.content;
+    if (Array.isArray(obj.content)) {
+      return obj.content
+        .map((b: unknown) => {
+          if (typeof b === "string") return b;
+          if (b && typeof b === "object" && "text" in b) {
+            return String((b as { text: unknown }).text);
+          }
+          return JSON.stringify(b);
+        })
+        .join("\n");
+    }
+  }
+
+  return JSON.stringify(output);
+}
+
 function filterEvent(event: {
   event: string;
   name?: string;
@@ -113,13 +164,12 @@ function filterEvent(event: {
     }
     case "on_tool_end": {
       const data = event.data as { output?: unknown };
-      const out = data.output;
-      const text = typeof out === "string" ? out : JSON.stringify(out);
+      const text = extractOutputText(data.output);
       return {
         type: "tool_end",
         tool: event.name ?? "unknown",
-        output_preview: text?.slice(0, 600) ?? "",
-        truncated: (text?.length ?? 0) > 600,
+        output_preview: text.slice(0, 1200),
+        truncated: text.length > 1200,
         runId,
       };
     }
