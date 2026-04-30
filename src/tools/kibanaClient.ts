@@ -4,7 +4,6 @@
  * Working answer key for Build Step 1. Drop-in replacement for the TODO
  * file at src/tools/kibanaClient.ts. Same imports, same exports.
  *
- * Reference only. Don't share with attendees during the workshop.
  */
 
 export type ConverseRequest = {
