@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ---------------------------------------------------------------------
-// TODO 1: load the system prompt from src/prompts/elastic.md
+// TODO 2: load the system prompt from src/prompts/elastic.md
 //
 // Hint:
 //   readFileSync(join(__dirname, "../prompts/elastic.md"), "utf8")
@@ -40,7 +40,7 @@ export const elasticSubagent = {
   name: "elastic-agent",
 
   // -----------------------------------------------------------------
-  // TODO 2: write the description.
+  // TODO 1: write the description.
   //
   // The orchestrator reads this when deciding whether to dispatch a
   // request to YOU. Be concise and specific. Example shape:
