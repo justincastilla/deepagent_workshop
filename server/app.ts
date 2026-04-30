@@ -175,14 +175,17 @@ function filterEvent(event: {
     }
     case "on_chat_model_end": {
       const data = event.data as {
-        output?: { content?: unknown; tool_calls?: unknown[] };
+        output?: {
+          content?: unknown;
+          tool_calls?: { name?: string; args?: unknown }[];
+        };
       };
       const content = data.output?.content;
       const toolCalls = data.output?.tool_calls;
       if (Array.isArray(toolCalls) && toolCalls.length > 0) {
         return {
           type: "model_decision",
-          tool_calls: toolCalls.map((tc: { name?: string; args?: unknown }) => ({
+          tool_calls: toolCalls.map((tc) => ({
             name: tc.name,
             args: tc.args,
           })),
